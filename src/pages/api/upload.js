@@ -18,7 +18,7 @@ const writeFile = promisify(fs.writeFile);
 export default async function handler(req, res) {
     if (req.method === 'POST') {
         // Parse the body data
-        const { file, filename } = req.body;
+        const { file, filename, comment } = req.body;
         if (!file || !filename) {
             return res.status(400).json({ message: 'No file uploaded.' });
         }
@@ -39,7 +39,7 @@ export default async function handler(req, res) {
             // Save the file
             await writeFile(filePath, base64Data, 'base64');
 
-            // Log file path and filename in MySQL
+            // Log file path, filename, and comment in MySQL
             const connection = await mysql.createConnection({
                 host: 'localhost',
                 user: 'root',
@@ -47,9 +47,10 @@ export default async function handler(req, res) {
                 database: 'fileuploader'
             });
 
+            // The SQL statement includes a placeholder for the comment
             await connection.execute(
-                'INSERT INTO uploads (filename, filepath) VALUES (?, ?)',
-                [filename, filePath]
+                'INSERT INTO uploads (filename, filepath, comment) VALUES (?, ?, ?)',
+                [filename, filePath, comment || ''] // Use an empty string if comment is not provided
             );
 
             // Close the database connection
